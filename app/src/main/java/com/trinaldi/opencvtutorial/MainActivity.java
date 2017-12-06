@@ -35,6 +35,7 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener, 
     double x = -1;
     double y = -1;
 
+    // OpenCV'yi çalıştır. Çalışıyor ise kamerayı çalıştır.
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {
@@ -57,11 +58,12 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener, 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Ekran sürekli açık kalsın
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
+        // Java nesneleri View'a bağla
         text_coordinates = (TextView) findViewById(R.id.text_coordinates);
         text_color = (TextView) findViewById(R.id.text_color);
-
         mCamera = (CameraBridgeViewBase) findViewById(R.id.java_camera_view);
         mCamera.setVisibility(SurfaceView.VISIBLE);
         mCamera.setCvCameraViewListener(this);
@@ -70,6 +72,7 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener, 
     @Override
     public void onPause() {
         super.onPause();
+        // Kamerayı kapat
         if (mCamera != null)
             mCamera.disableView();
     }
@@ -77,6 +80,7 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener, 
     @Override
     public void onResume() {
         super.onResume();
+        // Uygulama döndüğünde OpenCV çalışmıyorsa, çalıştır
         if (!OpenCVLoader.initDebug()) {
             OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_2_0, this, mLoaderCallback);
         } else {
@@ -87,12 +91,14 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener, 
     @Override
     public void onDestroy() {
         super.onDestroy();
+        // Kamerayı kapat
         if (mCamera != null)
             mCamera.disableView();
     }
 
     @Override
     public void onCameraViewStarted(int width, int height) {
+        // Rgba renk uzayı için matris oluştur. Rgba ve hsv pixel değerlerini saklamak için Scalar nesnesi oluştur
         mRgba = new Mat();
         mColorRgba = new Scalar(255);
         mColorHsv = new Scalar(255);
@@ -105,26 +111,27 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener, 
 
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
+        // Ekrandaki görüntüyü Rgba'ya çevir
         mRgba = inputFrame.rgba();
         return mRgba;
     }
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
+        // Rgba renk uzayın satır ve sütün sayısı
         int cols = mRgba.cols();
         int rows = mRgba.rows();
 
+        // Cihazdaki ekran görüntüsü çözünürlük ayarları
         double yLow = (double) mCamera.getHeight() * 0.2401961;
         double yHigh = (double) mCamera.getHeight() * 0.7696078;
+        double xScale = (double) cols / (double) mCamera.getWidth();
+        double yScale = (double) rows / (yHigh - yLow);
 
-        double xScale = (double)cols / (double) mCamera.getWidth();
-        double yScale = (double)rows / (yHigh - yLow);
-
+        // Ekrandaki tıklanan bölgeyi sakla ve ekranda göster
         x = event.getX();
         y = event.getY();
-
         y = y - yLow;
-
         x = x * xScale;
         y = y * yScale;
 
@@ -132,24 +139,26 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener, 
 
         text_coordinates.setText("X: " + Double.valueOf(x) + ", Y: " + Double.valueOf(y));
 
+        // Tıklanan bölgeyi dikdörtgen olarak sakla
         Rect touchedRect = new Rect();
 
         touchedRect.x = (int)x;
         touchedRect.y = (int)y;
-
         touchedRect.width = 8;
         touchedRect.height = 8;
 
+        // Tıklanan bölgenin rengini Rgba olarak sakla ve Hsv'ye dönüştür
         Mat touchedRegionRgba = mRgba.submat(touchedRect);
-
         Mat touchedRegionHsv = new Mat();
         Imgproc.cvtColor(touchedRegionRgba, touchedRegionHsv, Imgproc.COLOR_RGB2HSV_FULL);
 
+        // Tıklanan bölgenin Hsv rengini nokta nokta al
         mColorHsv = Core.sumElems(touchedRegionHsv);
         int pointCount = touchedRect.width * touchedRect.height;
         for (int i = 0; i < mColorHsv.val.length; i++)
             mColorHsv.val[i] /= pointCount;
 
+        // Alınan Hsv rengi Rgba'ya dönüştür ve ekranda göster
         mColorRgba = convertScalarHsv2Rgba(mColorHsv);
 
         text_color.setText("Color: #" + String.format("%02X", (int) mColorRgba.val[0])
@@ -163,6 +172,7 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener, 
         return false;
     }
 
+    // Hsv rengi Rgba'ya dönüştüren fonksiyon
     private Scalar convertScalarHsv2Rgba(Scalar hsvColor) {
         Mat pointMatRgba = new Mat();
         Mat pointMatHsv = new Mat(1, 1, CvType.CV_8UC3, hsvColor);
