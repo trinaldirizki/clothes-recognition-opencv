@@ -22,12 +22,14 @@ import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
+
 public class MainActivity extends AppCompatActivity implements OnTouchListener, CvCameraViewListener2 {
 
     private CameraBridgeViewBase mCamera;
     private Mat mRgba;
     private Scalar mColorHsv;
     private Scalar mColorRgba;
+    private ColorUtil colorUtil;
 
     TextView text_coordinates;
     TextView text_color;
@@ -64,6 +66,7 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener, 
         // Java nesneleri View'a bağla
         text_coordinates = (TextView) findViewById(R.id.text_coordinates);
         text_color = (TextView) findViewById(R.id.text_color);
+        colorUtil = new ColorUtil();
         mCamera = (CameraBridgeViewBase) findViewById(R.id.java_camera_view);
         mCamera.setVisibility(SurfaceView.VISIBLE);
         mCamera.setCvCameraViewListener(this);
@@ -161,9 +164,12 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener, 
         // Alınan Hsv rengi Rgba'ya dönüştür ve ekranda göster
         mColorRgba = convertScalarHsv2Rgba(mColorHsv);
 
+        String color_name = colorUtil.getNameFromRgb((int) mColorRgba.val[0], (int) mColorRgba.val[1],(int) mColorRgba.val[2]);
+
         text_color.setText("Color: #" + String.format("%02X", (int) mColorRgba.val[0])
                 + String.format("%02X", (int) mColorRgba.val[1])
-                + String.format("%02X", (int) mColorRgba.val[2]));
+                + String.format("%02X", (int) mColorRgba.val[2])
+                + " - " + color_name);
 
         text_color.setTextColor(Color.rgb((int) mColorRgba.val[0],
                 (int) mColorRgba.val[1],
