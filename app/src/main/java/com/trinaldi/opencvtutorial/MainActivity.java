@@ -9,6 +9,8 @@ import android.view.View;
 import android.view.View.OnTouchListener;
 import android.view.WindowManager;
 import android.widget.TextView;
+import android.speech.tts.TextToSpeech;
+import android.widget.Toast;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -22,6 +24,7 @@ import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements OnTouchListener, CvCameraViewListener2 {
 
@@ -33,6 +36,7 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener, 
 
     TextView text_coordinates;
     TextView text_color;
+    TextToSpeech textToSpeech;
 
     double x = -1;
     double y = -1;
@@ -67,6 +71,14 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener, 
         text_coordinates = (TextView) findViewById(R.id.text_coordinates);
         text_color = (TextView) findViewById(R.id.text_color);
         colorUtil = new ColorUtil();
+        textToSpeech = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int i) {
+                if (i != TextToSpeech.ERROR){
+                    textToSpeech.setLanguage(Locale.US);
+                }
+            }
+        });
         mCamera = (CameraBridgeViewBase) findViewById(R.id.java_camera_view);
         mCamera.setVisibility(SurfaceView.VISIBLE);
         mCamera.setCvCameraViewListener(this);
@@ -78,6 +90,10 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener, 
         // Kamerayı kapat
         if (mCamera != null)
             mCamera.disableView();
+        if (textToSpeech != null){
+            textToSpeech.stop();
+            textToSpeech.shutdown();
+        }
     }
 
     @Override
@@ -168,13 +184,14 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener, 
 
         text_color.setText("Color: #" + String.format("%02X", (int) mColorRgba.val[0])
                 + String.format("%02X", (int) mColorRgba.val[1])
-                + String.format("%02X", (int) mColorRgba.val[2])
-                + " - " + color_name);
+                + String.format("%02X", (int) mColorRgba.val[2]));
 
         text_color.setTextColor(Color.rgb((int) mColorRgba.val[0],
                 (int) mColorRgba.val[1],
                 (int) mColorRgba.val[2]));
 
+        Toast.makeText(getApplicationContext(), color_name, Toast.LENGTH_SHORT).show();
+        textToSpeech.speak(color_name,TextToSpeech.QUEUE_FLUSH, null);
         return false;
     }
 
