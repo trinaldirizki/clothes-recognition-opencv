@@ -1,3 +1,3 @@
-Clothes Recognition in OpenCV
+# Clothes Recognition App
 
-This android app lets you take a picture of clothing and tells you its color as well as its pattern. Specifically developed for visually impaired people. This app is developed using OpenCV library.
+I have made this android application as a part of my final year project. Built using Android and OpenCV library, this application is able to recognize the color and the pattern of the clothes. This application is specifically made for visually impaired users, means that users can control the application entirely with their voices.
