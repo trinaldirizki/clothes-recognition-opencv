@@ -1,6 +1,11 @@
 package com.trinaldi.opencvtutorial;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.net.Uri;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.MotionEvent;
@@ -29,6 +34,9 @@ import org.opencv.imgproc.Imgproc;
 import java.util.List;
 import java.util.Locale;
 
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -37,6 +45,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity implements OnTouchListener, CvCameraViewListener2 {
 
+    private static final int MY_PERMISSION_REQUEST = 100;
     private CameraBridgeViewBase mCamera;
     private Mat mRgba;
     private Scalar mColorHsv;
@@ -76,6 +85,16 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener, 
         // Ekran sürekli açık kalsın
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
+        // İzin
+        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.CAMERA}, MY_PERMISSION_REQUEST);
+        }
+        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, MY_PERMISSION_REQUEST);
+        }
+        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, MY_PERMISSION_REQUEST);
+        }
         // Java nesneleri View'a bağla
         text_coordinates = (TextView) findViewById(R.id.text_coordinates);
         text_color = (TextView) findViewById(R.id.text_color);
@@ -105,7 +124,11 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener, 
             @Override
             public void onResponse(Call<List<ClothesRepo>> call, Response<List<ClothesRepo>> response) {
                 List<ClothesRepo> repos = response.body();
-                Toast.makeText(getApplicationContext(), repos.toString(), Toast.LENGTH_SHORT).show();
+                StringBuilder stringBuilder = new StringBuilder();
+                for (ClothesRepo repo: repos){
+                    stringBuilder.append(repo.getName() + "\n");
+                }
+                Toast.makeText(getApplicationContext(), stringBuilder.toString(), Toast.LENGTH_LONG).show();
             }
 
             @Override
@@ -233,5 +256,30 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener, 
         Imgproc.cvtColor(pointMatHsv, pointMatRgba, Imgproc.COLOR_HSV2RGB_FULL, 4);
 
         return new Scalar(pointMatRgba.get(0, 0));
+    }
+
+    private void uploadFile(Uri fileUri){
+        RequestBody descriptionPart = RequestBody.create(MultipartBody.FORM, "Image");
+
+        Retrofit.Builder builder = new Retrofit.Builder()
+                .baseUrl("INPUT YOUR URL")
+                .addConverterFactory(GsonConverterFactory.create());
+
+        Retrofit retrofit = builder.build();
+
+        APIClient client = retrofit.create(APIClient.class);
+
+        Call<ResponseBody> call = null;
+        call.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+
+            }
+        });
     }
 }
