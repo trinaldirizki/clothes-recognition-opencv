@@ -12,6 +12,8 @@ import android.widget.TextView;
 import android.speech.tts.TextToSpeech;
 import android.widget.Toast;
 
+import com.trinaldi.opencvtutorial.model.ClothesRepo;
+
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
@@ -24,7 +26,14 @@ import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
+import java.util.List;
 import java.util.Locale;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity implements OnTouchListener, CvCameraViewListener2 {
 
@@ -82,6 +91,28 @@ public class MainActivity extends AppCompatActivity implements OnTouchListener, 
         mCamera = (CameraBridgeViewBase) findViewById(R.id.java_camera_view);
         mCamera.setVisibility(SurfaceView.VISIBLE);
         mCamera.setCvCameraViewListener(this);
+
+        Retrofit.Builder builder = new Retrofit.Builder()
+                .baseUrl("https://api.github.com/")
+                .addConverterFactory(GsonConverterFactory.create());
+
+        Retrofit retrofit = builder.build();
+
+        APIClient client = retrofit.create(APIClient.class);
+        Call<List<ClothesRepo>> call = client.reposForUser("fs-opensource");
+
+        call.enqueue(new Callback<List<ClothesRepo>>() {
+            @Override
+            public void onResponse(Call<List<ClothesRepo>> call, Response<List<ClothesRepo>> response) {
+                List<ClothesRepo> repos = response.body();
+                Toast.makeText(getApplicationContext(), repos.toString(), Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onFailure(Call<List<ClothesRepo>> call, Throwable t) {
+                Toast.makeText(getApplicationContext(), "Error", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @Override
